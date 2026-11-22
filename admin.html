@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>NAHAL · Panel de turnos</title>
+<style>
+:root{--bg:#4a3026;--deep:#2b2421;--card:#5a3b2f;--cream:#f4f0e8;--gold:#b99a6b;--mute:#c9bba8;--line:rgba(185,154,107,.35);color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font:17px/1.5 system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:18px}
+h1{font-family:Georgia,serif;font-weight:400;margin:0 0 4px}
+input,select{width:100%;font:inherit;color:var(--cream);background:var(--deep);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+button,.btn{font:600 1rem system-ui;border:0;border-radius:999px;padding:12px 16px;background:var(--gold);color:var(--deep);cursor:pointer;text-decoration:none;display:inline-block;margin:4px 6px 4px 0}
+.g{background:none;border:1px solid var(--gold);color:var(--gold)}.r{background:#7a2e2e;color:var(--cream)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0}
+.card p{margin:3px 0}.b{display:inline-block;padding:2px 12px;border-radius:999px;background:var(--gold);color:var(--deep);font-weight:600}.b.x{background:#7a2e2e;color:var(--cream)}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0}.stats div{background:var(--deep);border-radius:12px;padding:10px;text-align:center}.stats b{display:block;font-size:1.2rem;color:var(--gold)}
+.hint{color:var(--mute)}.err{color:#ffb4a0}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:9}#ov img{max-width:96%;max-height:92%}
+[hidden]{display:none!important}
+</style></head><body><main>
+<h1>NAHAL · Panel de turnos</h1><p class="hint">Solo para el salón</p>
+<div id="login"><button id="gg" style="width:100%;padding:16px;font-size:1.1rem">Entrar con Google</button><p class="hint">Elegí la cuenta nahalsalondebelleza@gmail.com. No hace falta contraseña.</p><p class="err" id="le"></p><details><summary class="hint">Entrar con correo y contraseña</summary><input id="em" type="email" placeholder="Correo" autocomplete="username"><input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password"><button id="in">Entrar</button></details></div>
+<div id="panel" hidden>
+<select id="fp"><option value="">Todas las profesionales</option><option>Nahiara</option><option>Celeste</option></select>
+<select id="fe"><option value="activo">Solo turnos activos</option><option value="">Todos (con cancelados)</option></select>
+<div class="stats"><div><b id="s1">0</b>turnos</div><div><b id="s2">$0</b>señas cobradas</div><div><b id="s3">$0</b>a cobrar en local</div></div>
+<button id="csv">Descargar planilla (Excel)</button><button class="g" id="out">Salir</button>
+<div id="list"></div></div></main><div id="ov"><img id="oi" alt="Comprobante"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,collection,query,orderBy,getDocs,writeBatch,doc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+var app=initializeApp({apiKey:"AIzaSyC6HKY_lp8JgjJ_X56P6BH2c5qD7yscgg8",authDomain:"nahal-turnos.firebaseapp.com",projectId:"nahal-turnos",appId:"1:884410449752:web:d1aea0946a6b86cb0b2f2d"});
+var db=getFirestore(app),au=getAuth(app),$=function(i){return document.getElementById(i)},ALL=[];
+var DAYN=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function money(n){return "$"+(n||0).toLocaleString("es-AR")}
+function pretty(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return DAYN[d.getDay()]+" "+p[2]+"/"+p[1]}
+var ST={activo:"Reservado",cancelado:"Cancelado por la clienta",cancelado_salon:"Cancelado por el salón"};
+$("in").onclick=function(){$("le").textContent="";signInWithEmailAndPassword(au,$("em").value.trim(),$("pw").value).catch(function(){$("le").textContent="Correo o contraseña incorrectos."})};
+$("gg").onclick=function(){$("le").textContent="";signInWithPopup(au,new GoogleAuthProvider()).catch(function(e){$("le").textContent=e.code==="auth/unauthorized-domain"?"Falta autorizar el dominio en Firebase.":e.code==="auth/operation-not-allowed"?"Falta habilitar Google en Firebase.":"No se pudo entrar con Google ("+(e.code||"error")+")."})};
+$("out").onclick=function(){signOut(au)};
+onAuthStateChanged(au,function(u){$("login").hidden=!!u;$("panel").hidden=!u;if(u)load()});
+$("fp").onchange=draw;$("fe").onchange=draw;
+$("ov").onclick=function(){$("ov").style.display="none"};
+async function load(){
+  try{var s=await getDocs(query(collection(db,"turnos"),orderBy("inicio")));ALL=s.docs.map(function(d){return d.data()});draw()}
+  catch(e){$("list").innerHTML='<p class="err">No se pudieron cargar los turnos. ¿Este usuario es el administrador?</p>'}
+}
+function view(){return ALL.filter(function(t){return(!$("fp").value||t.pro===$("fp").value)&&(!$("fe").value||t.estado===$("fe").value)})}
+function wa(t){var d=(t.telefono||"").replace(/\D/g,"");if(d.indexOf("54")!==0)d="54"+d.replace(/^0/,"");return "https://wa.me/"+d}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function draw(){
+  var v=view(),act=ALL.filter(function(t){return t.estado==="activo"&&(!$("fp").value||t.pro===$("fp").value)});
+  $("s1").textContent=act.length;$("s2").textContent=money(act.reduce(function(a,t){return a+t.sena},0));$("s3").textContent=money(act.reduce(function(a,t){return a+t.resto},0));
+  var L=$("list");L.innerHTML="";if(!v.length)L.appendChild(el("p","hint","No hay turnos para mostrar."));
+  v.forEach(function(t){
+    var c=el("div","card"),h=el("p");var b=el("span","b"+(t.estado==="activo"?"":" x"),ST[t.estado]||t.estado);h.appendChild(b);c.appendChild(h);
+    c.appendChild(el("p","",pretty(t.date)+" · "+t.time+" hs · "+t.pro)).style.fontWeight="600";
+    c.appendChild(el("p","",t.cliente));
+    var a=el("a","btn g","WhatsApp: "+t.telefono);a.href=wa(t);a.target="_blank";c.appendChild(a);
+    c.appendChild(el("p","",t.servicios));
+    c.appendChild(el("p","hint","Total "+money(t.total)+" · Seña "+money(t.sena)+" · Resto en local "+money(t.resto)));
+    if(t.aclaraciones)c.appendChild(el("p","hint","Aclaraciones: "+t.aclaraciones));
+    c.appendChild(el("p","hint","Código: "+t.codigo));
+    if(t.comprobante){var bt=el("button","g","Ver comprobante");bt.onclick=function(){$("oi").src=t.comprobante;$("ov").style.display="flex"};c.appendChild(bt)}
+    if(t.estado==="activo"){
+      var x=el("button","r","Cancelar turno (devolver seña)"),ar=false;
+      x.onclick=async function(){
+        if(!ar){ar=true;x.textContent="Tocá de nuevo para confirmar";return}
+        x.disabled=true;var w=writeBatch(db);
+        w.update(doc(db,"turnos",t.codigo),{estado:"cancelado_salon"});
+        w.delete(doc(db,"ocupados",t.date+"_"+t.pro+"_"+t.time));
+        try{await w.commit();load()}catch(e){x.textContent="Error. Reintentar";x.disabled=false}
+      };c.appendChild(x);
+    }else{
+      var d=el("button","g",t.devuelta?"Seña devuelta ✓ (deshacer)":"Marcar seña devuelta");
+      d.onclick=async function(){var w=writeBatch(db);w.update(doc(db,"turnos",t.codigo),{devuelta:!t.devuelta});try{await w.commit();load()}catch(e){}};c.appendChild(d);
+    }
+    L.appendChild(c);
+  });
+}
+$("csv").onclick=function(){
+  var H=["Fecha","Hora","Profesional","Cliente","WhatsApp","Servicios","Total","Seña 50%","Resto en local","Estado","Seña devuelta","Aclaraciones","Código"];
+  var rows=[H].concat(view().map(function(t){return [t.date,t.time,t.pro,t.cliente,t.telefono,t.servicios,t.total,t.sena,t.resto,ST[t.estado]||t.estado,t.devuelta?"Sí":"",t.aclaraciones||"",t.codigo]}));
+  var txt="\ufeff"+rows.map(function(r){return r.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"'}).join(";")}).join("\r\n");
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download="turnos-nahal.csv";a.click();
+};
+</script></body></html>
