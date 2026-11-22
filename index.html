@@ -62,6 +62,16 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 .pay .opt{justify-content:center;text-align:center}
 .alias{display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--deep);border:1px dashed var(--gold);border-radius:12px;padding:10px 14px;margin:10px 0}
 .alias button{background:var(--gold);color:var(--deep);border:0;border-radius:999px;padding:6px 14px;font:600 1rem 'DM Sans',sans-serif;cursor:pointer}
+header{margin-bottom:12px}
+.tabs{display:flex;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0 12px;margin-bottom:10px}
+.tabs button{flex:1;padding:13px 8px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--cream);font:600 1.05rem 'DM Sans',sans-serif;cursor:pointer}
+.tabs button[aria-pressed=true]{background:var(--gold);color:var(--deep);border-color:var(--gold)}
+.wanote{background:var(--card);border:1px solid var(--gold);border-radius:16px;padding:14px 16px;margin:0 0 18px;font-size:1.1rem;line-height:1.4}
+.wanote .cta{margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card p{margin:4px 0}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-weight:600;font-size:1rem;background:var(--gold);color:var(--deep)}
+.badge.x{background:#7a2e2e;color:var(--cream)}
+.code{font:600 1.6rem 'DM Sans',sans-serif;letter-spacing:.15em;color:var(--gold)}
 #prev{max-width:100%;max-height:220px;border-radius:12px;margin-top:8px;display:none}
 </style>
 </head>
@@ -73,47 +83,48 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{
 <text x="32" y="39" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-size="26" fill="#ebe2d3" stroke="none">N</text></svg>
 <div><div class="brand">NAHAL</div><small>SALÓN DE BELLEZA</small></div>
 </header>
+<nav class="tabs"><button id="tb">Reservar turno</button><button id="tm">Mis turnos</button></nav>
 <div id="app"></div>
 </main>
-<script>
-/* ===== CONEXIÓN CON FIREBASE: pegá acá los datos de tu proyecto (ver LEEME.txt) ===== */
-window.FIREBASE_CONFIG = {
+<script>window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyC6HKY_lp8JgjJ_X56P6BH2c5qD7yscgg8",
   authDomain: "nahal-turnos.firebaseapp.com",
   projectId: "nahal-turnos",
   appId: "1:884410449752:web:d1aea0946a6b86cb0b2f2d"
-};
-/* Modo de prueba (sin Firebase): guarda solo en este celular */
-window.DB = {
-  busy: function(date,pro){var l=[];try{l=JSON.parse(localStorage.getItem("nahal_ocupados")||"[]")}catch(e){}
-    return Promise.resolve(l.filter(function(t){return t.date===date&&t.pro===pro}))},
-  book: function(b){var l=[];try{l=JSON.parse(localStorage.getItem("nahal_ocupados")||"[]")}catch(e){}
-    l.push({date:b.date,time:b.time,pro:b.pro});try{localStorage.setItem("nahal_ocupados",JSON.stringify(l))}catch(e){}
-    return Promise.resolve()}
-};
-</script>
+};</script>
 <script type="module">
-var c = window.FIREBASE_CONFIG;
-if (c && c.projectId) {
-  try {
-    var A = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-    var F = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-    var db = F.getFirestore(A.initializeApp(c));
-    window.DB = {
-      busy: async function(date, pro){
-        var q = F.query(F.collection(db,"ocupados"), F.where("date","==",date), F.where("pro","==",pro));
-        var snap = await F.getDocs(q); return snap.docs.map(function(d){return d.data()});
-      },
-      book: async function(b){
-        var id = b.date+"_"+b.pro+"_"+b.time, batch = F.writeBatch(db);
-        batch.set(F.doc(db,"ocupados",id), {date:b.date, pro:b.pro, time:b.time});
-        batch.set(F.doc(db,"turnos",id), {date:b.date, pro:b.pro, time:b.time, servicio:b.svc, total:b.total, minutos:b.min,
-          cliente:b.name, telefono:b.tel, aclaraciones:b.note, pago:b.pay, creado:F.serverTimestamp()});
-        await batch.commit();
-      }
-    };
-  } catch(e) { console.error("Firebase no se pudo iniciar", e); }
-}
+try {
+  var A = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  var F = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+  var db = F.getFirestore(A.initializeApp(window.FIREBASE_CONFIG));
+  var slotId = function(d,p,t){return d+"_"+p+"_"+t};
+  window.DB = {
+    busy: async function(date, pro){
+      var q = F.query(F.collection(db,"ocupados"), F.where("date","==",date), F.where("pro","==",pro));
+      return (await F.getDocs(q)).docs.map(function(d){return d.data()});
+    },
+    book: async function(b){
+      var id = slotId(b.date,b.pro,b.time), w = F.writeBatch(db);
+      w.set(F.doc(db,"ocupados",id), {date:b.date, pro:b.pro, time:b.time});
+      w.set(F.doc(db,"punteros",id), {code:b.code});
+      w.set(F.doc(db,"turnos",b.code), {codigo:b.code, date:b.date, time:b.time, pro:b.pro, inicio:F.Timestamp.fromDate(b.inicio),
+        servicios:b.servicios, total:b.total, sena:b.sena, resto:b.resto, cliente:b.cliente, telefono:b.telefono,
+        aclaraciones:b.aclaraciones, comprobante:b.comprobante, estado:"activo", creado:F.serverTimestamp()});
+      await w.commit();
+    },
+    get: async function(code){
+      var s = await F.getDoc(F.doc(db,"turnos",code));
+      if(!s.exists()) return null;
+      var d = s.data(); d.inicio = d.inicio.toMillis(); return d;
+    },
+    cancel: async function(t){
+      var w = F.writeBatch(db);
+      w.update(F.doc(db,"turnos",t.codigo), {estado:"cancelado"});
+      w.delete(F.doc(db,"ocupados",slotId(t.date,t.pro,t.time)));
+      await w.commit();
+    }
+  };
+} catch(e) { console.error("Firebase no se pudo iniciar", e); }
 window.DB_READY = true;
 </script>
 <script>
@@ -131,12 +142,12 @@ var DEP = {t:"Depilación con cera descartable", multi:true, o:[
  {l:"Bozo",p:4000,m:10},{l:"Cejas",p:6000,m:15},
  {l:"Cavado bikini",p:8000,m:20,x:"cavado"},{l:"Cavado completo",p:10000,m:30,x:"cavado"},{l:"Tiro de cola",p:6000,m:15}]};
 var TREE = {t:"¿Qué servicio querés?", o:[
- {l:"Uñas", n:{t:"Uñas", o:[
+ {l:"Uñas", n:{t:"Uñas", multi:true, o:[
    {l:"Esmaltado semipermanente",p:18000,m:60},{l:"Capping",p:23000,m:90},{l:"Esculpidas en soft gel",p:26000,m:120},
    {l:"Diseño simple x4",p:2000,m:20},{l:"Full diseño x10",p:4000,m:40},{l:"Retirado",p:4000,m:30}]}},
  {l:"Masajes", n:{t:"Masaje descontracturante", o:[
    {l:"Cuerpo completo",p:40000,m:90},{l:"Tronco superior",p:23000,m:45},{l:"Tronco inferior",p:23000,m:45}]}},
- {l:"Faciales", n:{t:"Faciales", o:[
+ {l:"Faciales", n:{t:"Faciales", multi:true, o:[
    {l:"Masaje facial activador",p:15000,m:45,f:1},{l:"Masaje facial descongestivo",p:15000,m:45,f:1},
    {l:"Drenaje linfático facial",p:15000,m:45,f:1},
    {l:"Limpieza facial profunda con masajes",d:"Facial: rostro, cuello y escote",p:40000,m:90,f:1}]}},
@@ -146,10 +157,10 @@ var TREE = {t:"¿Qué servicio querés?", o:[
    {l:"Renovación e hidratación",p:60000,m:60},{l:"Renovación e hidratación tronco inferior",p:35000,m:45},
    {l:"Drenaje linfático piernas",p:45000,m:60},{l:"Drenaje linfático brazos",p:25000,m:45},{l:"Drenaje linfático abdomen",p:20000,m:30}]}},
  {l:"Depilación", d:"Con cera descartable · elegí varias zonas", n:DEP},
- {l:"Otros", n:{t:"Otros", o:[{l:"Reflexología podal",p:25000,m:45},{l:"SPA de pies con masajes",p:17000,m:45}]}}
+ {l:"Otros", n:{t:"Otros", o:[{l:"Reflexología podal",p:25000,m:45,f:1},{l:"SPA de pies con masajes",p:17000,m:45,f:1}]}}
 ]};
 
-var S = {path:[], step:"tree", sel:[], pro:null, date:null, time:null, pay:null, file:null};
+var S = {view:"book", path:[], step:"tree", sel:[], pro:null, date:null, time:null, pay:null, file:null};
 var $app = document.getElementById("app");
 var DAYN = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
 var MONTHN = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
@@ -178,7 +189,7 @@ function back(){
 function backBtn(){return S.step==="tree"&&!S.path.length?"":'<button class="back" id="bk">‹ Volver</button>'}
 function crumb(){return S.path.map(function(o){return o.l}).join(" › ")}
 
-function render(){
+function renderBook(){
   $app.innerHTML="";
   if(S.step==="tree"){
     var nd=node(),first=!S.path.length;
@@ -208,7 +219,7 @@ function render(){
       $("nx").onclick=function(){if(!S.sel.length)return $("err").textContent="Elegí al menos una opción.";go("pro")};
     }
   }else if(S.step==="pro"){
-    $app.appendChild(el(backBtn()+'<p class="crumb">'+crumb()+(S.sel.length&&!S.path[S.path.length-1].n&&S.sel[0]!==S.path[S.path.length-1]?'':'')+'</p><h1>¿Con quién querés atenderte?</h1><p class="sub">'+(facial()?'Los faciales los realiza Celeste.':'Elegí la profesional. Podés ver su perfil.')+'</p><div class="opts" id="opts"></div>'));
+    $app.appendChild(el(backBtn()+'<p class="crumb">'+crumb()+(S.sel.length&&!S.path[S.path.length-1].n&&S.sel[0]!==S.path[S.path.length-1]?'':'')+'</p><h1>¿Con quién querés atenderte?</h1><p class="sub">'+(facial()?'Este servicio lo realiza solo Celeste.':'Elegí la profesional. Podés ver su perfil.')+'</p><div class="opts" id="opts"></div>'));
     PROS.forEach(function(p){
       if(facial()&&p.noFacial)return;
       var b=document.createElement("div");b.className="opt pro";b.tabIndex=0;b.setAttribute("role","button");
@@ -220,36 +231,29 @@ function render(){
       $("opts").appendChild(b);
     });
   }else if(S.step==="when"){
-    $app.appendChild(el(backBtn()+'<p class="crumb">'+names()+' · '+S.pro.n+'</p><h1>Elegí día y horario</h1><p class="sub">Podés reservar hasta '+MAXDAYS+' días antes.</p><div class="days" id="days"></div><h2>Horario</h2><div class="slots" id="slots"></div><p class="hint" id="sh"></p><p class="err" id="err" role="alert"></p><button class="cta" id="nx">Continuar</button>'));
+    $app.appendChild(el(backBtn()+'<p class="crumb">'+names()+' · '+S.pro.n+'</p><h1>Elegí día y horario</h1><p class="sub">Podés reservar hasta '+MAXDAYS+' días antes.</p><div class="wanote"><b>¿No podés en estos turnos?</b><br>Coordiná tu turno por WhatsApp con '+S.pro.n+'.<a class="cta" id="wa2" target="_blank" rel="noopener">Hablar por WhatsApp</a></div><div class="days" id="days"></div><h2>Horario</h2><div class="slots" id="slots"></div><p class="hint" id="sh"></p><p class="err" id="err" role="alert"></p><button class="cta" id="nx">Continuar</button>'));
     drawDays();drawSlots();
+    $("wa2").href="https://wa.me/"+S.pro.wa+"?text="+encodeURIComponent("Hola! No puedo en los turnos disponibles. Quiero coordinar un turno de: "+names());
     $("nx").onclick=function(){if(!S.date||!S.time)return $("err").textContent="Elegí un día y un horario.";go("final")};
   }else if(S.step==="final"){
+    var se=sena(),re=total()-se;
     $app.appendChild(el(backBtn()+'<h1>Confirmá tu turno</h1><div class="sum">'+S.sel.map(function(o){return '<p>'+o.l+' <span style="float:right;color:var(--gold)">'+priceTxt(o)+'</span></p>'}).join("")+'<p class="hint">'+S.pro.n+' · '+pretty(S.date)+' · '+S.time+' hs</p><div class="tot"><span>Total</span><span>'+money(total())+'</span></div></div>'+
-    '<h2>Tus datos</h2><input id="name" placeholder="Nombre y apellido" autocomplete="name"><input id="tel" placeholder="Teléfono / WhatsApp" type="tel" autocomplete="tel"><textarea id="note" placeholder="¿Querés aclarar algo del turno? (opcional)"></textarea>'+
-    '<h2>Forma de pago</h2><div class="pay"><button class="opt" id="p1">Transferencia</button><button class="opt" id="p2">Efectivo</button></div><div id="payBox"></div><p class="err" id="err" role="alert"></p><button class="cta" id="go">Reservar turno</button>'));
-    $("p1").onclick=function(){S.pay="Transferencia";drawPay()};$("p2").onclick=function(){S.pay="Efectivo";drawPay()};
-    drawPay();$("go").onclick=confirmar;
+    '<h2>Tus datos</h2><input id="name" placeholder="Nombre y apellido" autocomplete="name"><input id="tel" placeholder="Tu WhatsApp (con código de área)" type="tel" autocomplete="tel"><textarea id="note" placeholder="¿Querés aclarar algo del turno? (opcional)"></textarea>'+
+    '<h2>Seña para reservar</h2><div class="sum"><p>Para reservar el turno hay que abonar el <b>50%</b>:</p><p class="code" style="letter-spacing:0">'+money(se)+'</p><p>El otro 50% ('+money(re)+') lo abonás en el local.</p></div>'+
+    '<p class="hint">Transferí la seña al alias de Mercado Pago y subí la foto del comprobante.</p><div class="alias"><b>'+ALIAS+'</b><button id="cp">Copiar</button></div><input type="file" id="file" accept="image/*"><img id="prev" alt="Comprobante">'+
+    '<p class="err" id="err" role="alert"></p><button class="cta" id="go">Reservar turno</button>'));
+    $("cp").onclick=function(){try{navigator.clipboard.writeText(ALIAS);$("cp").textContent="Copiado"}catch(e){$("cp").textContent=ALIAS}};
+    $("file").onchange=function(){S.file=this.files[0]||null;if(S.file){$("prev").src=URL.createObjectURL(S.file);$("prev").style.display="block"}};
+    $("go").onclick=confirmar;
   }else{
-    $app.appendChild(el('<h1>¡Casi listo!</h1><p class="sub">Tocá el botón y enviá el mensaje por WhatsApp a '+S.pro.n+' para que reciba tu turno.</p><div class="sum"><p><b>'+names()+'</b></p><p>'+S.pro.n+' · '+pretty(S.date)+' · '+S.time+' hs</p><div class="tot"><span>Total</span><span>'+money(total())+'</span></div></div><a class="cta" id="wa" target="_blank" rel="noopener">Enviar turno por WhatsApp</a><button class="cta ghost" id="shr" hidden>Enviar comprobante de transferencia</button><button class="back" id="again" style="margin-top:18px">Reservar otro turno</button>'));
+    $app.appendChild(el('<h1>¡Turno reservado!</h1><p class="sub">Guardá tu código. Lo necesitás para ver o cancelar tu turno desde otro celular.</p><div class="sum"><p class="code">'+S.code+'</p><p><b>'+names()+'</b></p><p>'+S.pro.n+' · '+pretty(S.date)+' · '+S.time+' hs</p><div class="tot"><span>Total</span><span>'+money(total())+'</span></div><p class="hint">Seña abonada: '+money(sena())+' · Resto en el local: '+money(total()-sena())+'</p></div><a class="cta" id="wa" target="_blank" rel="noopener">Avisar a '+S.pro.n+' por WhatsApp</a><button class="cta ghost" id="mine">Ver mis turnos</button><button class="back" id="again" style="margin-top:18px">Reservar otro turno</button>'));
     $("wa").href="https://wa.me/"+S.pro.wa+"?text="+encodeURIComponent(S.msg);
-    if(S.file&&navigator.canShare&&navigator.canShare({files:[S.file]})){$("shr").hidden=false;
-      $("shr").onclick=function(){navigator.share({files:[S.file],text:"Comprobante de transferencia - turno NAHAL"}).catch(function(){})}}
-    else if(S.file){var h=document.createElement("p");h.className="hint";h.textContent="Adjuntá el comprobante en el chat de WhatsApp después de enviar el mensaje.";$app.insertBefore(h,$("again"))}
-    $("again").onclick=function(){S={path:[],step:"tree",sel:[],pro:null,date:null,time:null,pay:null,file:null};render()};
+    $("mine").onclick=function(){S.view="mine";render();window.scrollTo(0,0)};
+    $("again").onclick=function(){S={view:"book",path:[],step:"tree",sel:[],pro:null,date:null,time:null,pay:null,file:null};render()};
   }
   var bk=$("bk");if(bk)bk.onclick=back;
 }
-function drawPay(){
-  $("p1").setAttribute("aria-pressed",S.pay==="Transferencia");$("p2").setAttribute("aria-pressed",S.pay==="Efectivo");
-  var b=$("payBox");
-  if(S.pay==="Transferencia"){
-    b.innerHTML='<p class="hint" style="margin-top:12px">Transferí '+money(total())+' al alias de Mercado Pago y subí el comprobante.</p><div class="alias"><b>'+ALIAS+'</b><button id="cp">Copiar</button></div><input type="file" id="file" accept="image/*"><img id="prev" alt="Comprobante">';
-    $("cp").onclick=function(){try{navigator.clipboard.writeText(ALIAS);$("cp").textContent="Copiado"}catch(e){$("cp").textContent=ALIAS}};
-    $("file").onchange=function(){S.file=this.files[0]||null;if(S.file){$("prev").src=URL.createObjectURL(S.file);$("prev").style.display="block"}};
-    if(S.file){$("prev").src=URL.createObjectURL(S.file);$("prev").style.display="block"}
-  }else if(S.pay==="Efectivo")b.innerHTML='<p class="hint" style="margin-top:12px">Abonás en efectivo el día del turno.</p>';
-  else b.innerHTML="";
-}
+function sena(){return Math.round(total()/2)}
 function drawDays(){
   var box=$("days"),d=new Date(),n=0;
   for(var i=0;i<=MAXDAYS;i++){
@@ -284,19 +288,77 @@ function loadBusy(k){
   var go2=function(){window.DB.busy(k,S.pro.n).then(function(r){if(S.date===k){S.busy=r;drawSlots()}}).catch(function(){if(S.date===k){S.busy=[];drawSlots()}})};
   if(window.DB_READY)go2();else setTimeout(function(){loadBusy(k)},300);
 }
+function ready(f){if(window.DB_READY)f();else setTimeout(function(){ready(f)},250)}
+function compress(f){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var r=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",0.6))};im.onerror=rej;im.src=URL.createObjectURL(f)})}
+function makeCode(){var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint8Array(10);crypto.getRandomValues(r);return Array.prototype.map.call(r,function(x){return a[x%a.length]}).join("")}
+function getCodes(){try{return JSON.parse(localStorage.getItem("nahal_codes")||"[]")}catch(e){return []}}
+function saveCode(c){var l=getCodes();if(l.indexOf(c)<0){l.unshift(c);try{localStorage.setItem("nahal_codes",JSON.stringify(l))}catch(e){}}}
 function confirmar(){
   var name=$("name").value.trim(),tel=$("tel").value.trim(),note=$("note").value.trim(),err=$("err");
   if(name.length<2)return err.textContent="Escribí tu nombre.";
-  if(tel.replace(/\D/g,"").length<6)return err.textContent="Escribí un teléfono válido.";
-  if(!S.pay)return err.textContent="Elegí transferencia o efectivo.";
-  if(S.pay==="Transferencia"&&!S.file)return err.textContent="Subí el comprobante de la transferencia.";
-  
-  S.msg="*NUEVO TURNO · NAHAL*\n\n*Servicio:* "+names()+"\n*Profesional:* "+S.pro.n+"\n*Fecha:* "+pretty(S.date)+"\n*Horario:* "+S.time+" hs\n*Total:* "+money(total())+(S.sel.some(function(o){return o.p==null})?" (+ servicio a consultar)":"")+"\n*Pago:* "+S.pay+(S.pay==="Transferencia"?" (alias "+ALIAS+", comprobante adjunto)":"")+"\n\n*Cliente:* "+name+"\n*Teléfono:* "+tel+(note?"\n*Aclaraciones:* "+note:"");
+  if(tel.replace(/\D/g,"").length<8)return err.textContent="Escribí tu WhatsApp con código de área.";
+  if(!S.file)return err.textContent="Subí la foto del comprobante de la seña.";
   var btn=$("go");btn.disabled=true;btn.textContent="Reservando…";err.textContent="";
-  window.DB.book({date:S.date,time:S.time,pro:S.pro.n,svc:names(),total:total(),min:minutes(),name:name,tel:tel,note:note,pay:S.pay})
-   .then(function(){go("done")})
-   .catch(function(){S.busy=null;S.time=null;go("when");loadBusy(S.date);setTimeout(function(){var e=$("err");if(e)e.textContent="Ese horario se acaba de ocupar. Elegí otro."},50)});
+  var p=S.date.split("-"),code=makeCode();
+  compress(S.file).then(function(img){
+    return window.DB.book({code:code,date:S.date,time:S.time,pro:S.pro.n,inicio:new Date(+p[0],+p[1]-1,+p[2],+S.time.slice(0,2),0),
+      servicios:names(),total:total(),sena:sena(),resto:total()-sena(),cliente:name,telefono:tel,aclaraciones:note,comprobante:img});
+  }).then(function(){
+    saveCode(code);S.code=code;
+    S.msg="*NUEVO TURNO · NAHAL*\n\n*Servicio:* "+names()+"\n*Profesional:* "+S.pro.n+"\n*Fecha:* "+pretty(S.date)+"\n*Horario:* "+S.time+" hs\n*Total:* "+money(total())+"\n*Seña 50% (transferencia, comprobante cargado):* "+money(sena())+"\n*Resto a abonar en el local:* "+money(total()-sena())+"\n\n*Cliente:* "+name+"\n*WhatsApp:* "+tel+(note?"\n*Aclaraciones:* "+note:"")+"\n*Código:* "+code;
+    go("done");
+  }).catch(function(){
+    S.busy=null;S.time=null;go("when");loadBusy(S.date);
+    setTimeout(function(){var e=$("err");if(e)e.textContent="No se pudo reservar. Puede que ese horario se haya ocupado: elegí otro."},50);
+  });
 }
+function renderMine(){
+  $app.innerHTML="";
+  $app.appendChild(el('<h1>Mis turnos</h1><p class="sub">Acá ves tus turnos y podés cancelarlos hasta 1 día antes.</p><div id="list"></div><h2>¿Reservaste desde otro celular?</h2><input id="code" placeholder="Tu código de turno" autocapitalize="characters"><p class="err" id="err" role="alert"></p><button class="cta ghost" id="find">Buscar mi turno</button>'));
+  var codes=getCodes();
+  if(!codes.length)$("list").innerHTML='<p class="hint">Todavía no hay turnos guardados en este celular.</p>';
+  codes.forEach(function(c){ready(function(){window.DB.get(c).then(function(t){if(t)$("list")&&$("list").appendChild(card(t))}).catch(function(){})})});
+  $("find").onclick=function(){
+    var c=$("code").value.trim().toUpperCase();if(c.length<8)return $("err").textContent="Escribí tu código completo.";
+    window.DB.get(c).then(function(t){if(!t)return $("err").textContent="No encontramos ese código.";saveCode(c);renderMine()}).catch(function(){$("err").textContent="No se pudo buscar. Probá de nuevo."});
+  };
+}
+function card(t){
+  var d=document.createElement("div");d.className="card";
+  var left=t.inicio-Date.now(),can=t.estado==="activo"&&left>=86400000,st={activo:"Reservado",cancelado:"Cancelado",cancelado_salon:"Cancelado por el salón"}[t.estado]||t.estado;
+  var pro=PROS.filter(function(p){return p.n===t.pro})[0]||PROS[0];
+  d.innerHTML='<p><span class="badge'+(t.estado==="activo"?"":" x")+'"></span></p><p><b class="sv"></b></p><p class="when"></p><p class="mny"></p><div class="act"></div>';
+  d.querySelector(".badge").textContent=st;d.querySelector(".sv").textContent=t.servicios;
+  d.querySelector(".when").textContent=t.pro+" · "+pretty(t.date)+" · "+t.time+" hs";
+  d.querySelector(".mny").textContent="Total "+money(t.total)+" · Seña pagada "+money(t.sena)+" · Resto en el local "+money(t.resto);
+  var act=d.querySelector(".act");
+  if(t.estado==="cancelado_salon"){var m=document.createElement("p");m.className="hint";m.textContent="El salón canceló este turno. Te vamos a devolver la seña.";act.appendChild(m)}
+  if(t.estado==="activo"){
+    var wa=document.createElement("a");wa.className="cta ghost";wa.target="_blank";wa.rel="noopener";wa.textContent="Hablar por WhatsApp con "+pro.n;
+    wa.href="https://wa.me/"+pro.wa+"?text="+encodeURIComponent("Hola! Te escribo por mi turno del "+pretty(t.date)+" a las "+t.time+" hs (código "+t.codigo+").");
+    if(can){
+      var b=document.createElement("button");b.className="cta";b.textContent="Cancelar turno";var armed=false;
+      b.onclick=function(){
+        if(!armed){armed=true;b.textContent="Tocá de nuevo para confirmar";return}
+        b.disabled=true;b.textContent="Cancelando…";
+        window.DB.cancel(t).then(function(){
+          d.innerHTML='<p><b>Turno cancelado.</b></p><p class="hint">Avisale a '+pro.n+' por WhatsApp para coordinar la seña.</p>';
+          var a2=document.createElement("a");a2.className="cta";a2.target="_blank";a2.rel="noopener";a2.textContent="Avisar a "+pro.n;
+          a2.href="https://wa.me/"+pro.wa+"?text="+encodeURIComponent("Hola! Cancelé mi turno del "+pretty(t.date)+" a las "+t.time+" hs (código "+t.codigo+").");d.appendChild(a2);
+        }).catch(function(){b.disabled=false;b.textContent="No se pudo cancelar. Reintentar"});
+      };
+      act.appendChild(b);
+    }else{var m2=document.createElement("p");m2.className="hint";m2.style.fontSize="1.05rem";m2.textContent="Ya no se puede cancelar online: falta menos de 1 día para tu turno.";act.appendChild(m2)}
+    act.appendChild(wa);
+  }
+  return d;
+}
+function render(){
+  $("tb").setAttribute("aria-pressed",S.view!=="mine");$("tm").setAttribute("aria-pressed",S.view==="mine");
+  if(S.view==="mine")renderMine();else renderBook();
+}
+$("tb").onclick=function(){S.view="book";render();window.scrollTo(0,0)};
+$("tm").onclick=function(){S.view="mine";render();window.scrollTo(0,0)};
 render();
 </script>
 </body>
