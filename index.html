@@ -367,8 +367,13 @@ function card(t){
     }else{var m2=document.createElement("p");m2.className="hint";m2.style.fontSize="1.05rem";m2.textContent="Ya no se puede cancelar online: falta menos de 1 día para tu turno.";act.appendChild(m2)}
     act.appendChild(wa);
   }
+  if(t.estado!=="activo"||left<0){
+    var rm=document.createElement("button");rm.className="cta ghost";rm.textContent="Quitar de mi lista";
+    rm.onclick=function(){removeCode(t.codigo);d.remove()};act.appendChild(rm);
+  }
   return d;
 }
+function removeCode(c){var l=getCodes().filter(function(x){return x!==c});try{localStorage.setItem("nahal_codes",JSON.stringify(l))}catch(e){}}
 function render(){
   $("tb").setAttribute("aria-pressed",S.view!=="mine");$("tm").setAttribute("aria-pressed",S.view==="mine");
   if(S.view==="mine")renderMine();else renderBook();
