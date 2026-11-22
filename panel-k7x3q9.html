@@ -44,21 +44,44 @@ h2.day{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.
 #list h2.day,#list .empty{grid-column:1/-1}#list .card{margin:0}
 .stat b{font-size:1.9rem!important}.cn{font-size:1.3rem}.hr b{font-size:1.8rem}
 .empty{text-align:center;color:var(--mute);padding:40px 10px;border:1px dashed var(--line);border-radius:20px}
+.fm-o{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;z-index:20;overflow:auto;padding:14px}.fm-o.on{display:block}
+.fm{max-width:520px;margin:16px auto;background:var(--deep);border:1px solid var(--gold);border-radius:26px;padding:22px 18px}
+.fm h2{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.7rem;margin:0 0 4px}
+.fm label{display:block;margin:12px 0 4px;color:var(--mute);font-size:.95rem}
+.fm input,.fm select,.fm textarea{width:100%;font:inherit;color:var(--cream);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.fm textarea{min-height:70px}.fm .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fm .chk{display:flex;gap:10px;align-items:center;background:var(--card);border-radius:14px;padding:12px 14px;margin-top:14px}.fm .chk input{width:22px;height:22px}.fm .chk label{margin:0;color:var(--cream);font-size:1rem}
+.fm .ferr{color:#ffb4a0;min-height:1.3em;margin:10px 0 0}
+.tag{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:999px;border:1px solid var(--gold);color:var(--gold);font-size:.8rem}
+.stats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
+[hidden]{display:none!important}
 #ov{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:9;padding:10px}#ov img{max-width:100%;max-height:100%}
 @media(max-width:420px){.card{grid-template-columns:1fr}.hr{border-right:0;border-bottom:1px solid var(--line);padding:0 0 10px;text-align:left;display:flex;align-items:center;gap:12px}.hr b{display:inline}.pro{margin-top:0}}
 </style></head><body><main>
 <header><svg viewBox="0 0 64 64" fill="none" stroke="#b99a6b" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M13 42A22 22 0 1 1 52 38"/><path d="M8 45Q20 38 30 45T52 44"/><path d="M50 44q3-9 11-9 0 8-11 9z"/><text x="32" y="39" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-size="26" fill="#ebe2d3" stroke="none">N</text></svg>
 <div><div class="brand">NAHAL</div><small>PANEL DE TURNOS</small></div></header>
-<div class="stats"><div class="stat"><b id="s1">0</b><span>turnos próximos</span></div><div class="stat"><b id="s2">$0</b><span>señas cobradas</span></div><div class="stat"><b id="s3">$0</b><span>a cobrar en el local</span></div></div>
+<div class="stats"><div class="stat"><b id="s1">0</b><span>turnos próximos</span></div><div class="stat"><b id="s2">0</b><span>turnos realizados</span></div><div class="stat"><b id="s3">$0</b><span>señas cobradas</span></div><div class="stat"><b id="s4">$0</b><span>total recibido</span></div><div class="stat"><b id="s5">$0</b><span>falta cobrar en el local</span></div></div>
 <div class="chips" id="cp"></div><div class="chips" id="cv"></div>
-<div class="tools"><button class="btn g" id="rf">Actualizar</button><span class="upd" id="up"></span></div>
-<section class="big"><div class="bh"><h1>Agenda de turnos</h1><span class="cnt" id="cnt"></span></div><div id="list"></div></section></main><div id="ov"><img id="oi" alt="Comprobante"></div>
+<div class="tools"><button class="btn" id="add">＋ Agregar turno o bloquear horario</button><button class="btn g" id="rf">Actualizar</button><span class="upd" id="up"></span></div>
+<section class="big"><div class="bh"><h1>Agenda de turnos</h1><span class="cnt" id="cnt"></span></div><div id="list"></div></section></main>
+<div id="ov"><img id="oi" alt="Comprobante"></div>
+<div class="fm-o" id="mo"><div class="fm"><h2>Agregar turno</h2><p class="note" style="color:var(--mute);margin:0">Para turnos que te piden por fuera de la página. Queda ocupado y se anota todo acá.</p>
+<div class="chk"><input type="checkbox" id="fb"><label for="fb">Solo bloquear este horario (sin cliente)</label></div>
+<div class="row2"><div><label>Profesional</label><select id="fpr"><option>Nahiara</option><option>Celeste</option></select></div><div><label>Fecha</label><input type="date" id="fd"></div></div>
+<label>Horario</label><select id="ft"></select><input type="time" id="fo" hidden style="margin-top:8px">
+<div id="fx"><label>Servicio</label><input id="fs" placeholder="Ej: Capping + diseño">
+<div class="row2"><div><label>Nombre</label><input id="fn" placeholder="Nombre y apellido"></div><div><label>WhatsApp</label><input id="fw" type="tel" placeholder="Número"></div></div>
+<div class="row2"><div><label>Monto total ($)</label><input id="fto" type="number" inputmode="numeric" placeholder="0"></div><div><label>Monto recibido ($)</label><input id="fr" type="number" inputmode="numeric" placeholder="0"></div></div>
+<label>¿Cómo abonó?</label><select id="fp2"><option>Efectivo</option><option>Transferencia</option><option>Mixto</option><option>Otro</option></select></div>
+<label>Notas (opcional)</label><textarea id="fa"></textarea><p class="ferr" id="ferr" role="alert"></p>
+<button class="btn" id="fsv" style="width:100%">Guardar</button><button class="btn g" id="fcx" style="width:100%;margin-top:8px">Cancelar</button></div></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getFirestore,collection,query,orderBy,getDocs,writeBatch,doc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,collection,query,orderBy,getDocs,writeBatch,deleteDoc,doc,Timestamp,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 var COLL="reservas_x7k2q9";
 var db=getFirestore(initializeApp({apiKey:"AIzaSyC6HKY_lp8JgjJ_X56P6BH2c5qD7yscgg8",authDomain:"nahal-turnos.firebaseapp.com",projectId:"nahal-turnos",appId:"1:884410449752:web:d1aea0946a6b86cb0b2f2d"}));
 var $=function(i){return document.getElementById(i)},ALL=[],FP="",FV="prox";
+var HOURS={1:[8,11,14,17,20],2:[8,11,14,17,20],3:[8,11,14,17],4:[8,11,14,17,20],5:[8,11,14,17,20],6:[8,11,14]};
 var DAYN=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"],MON=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 var ST={activo:"Reservado",cancelado:"Cancelado por la clienta",cancelado_salon:"Cancelado por el salón"};
 function money(n){return "$"+(n||0).toLocaleString("es-AR")}
@@ -67,6 +90,8 @@ function label(s){var t=new Date(),m=new Date();m.setDate(m.getDate()+1);if(s===
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 function chips(box,items,cur,fn){box.innerHTML="";items.forEach(function(x){var b=el("button","chip",x[1]);b.setAttribute("aria-pressed",cur===x[0]);b.onclick=function(){fn(x[0]);drawAll()};box.appendChild(b)})}
 function wa(t){var d=(t.telefono||"").replace(/\D/g,"");if(d.indexOf("54")!==0)d="54"+d.replace(/^0/,"");return "https://wa.me/"+d}
+function recibido(t){return (t.sena||0)+(t.cobrado?(t.resto||0):0)}
+function makeCode(){var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint8Array(10);crypto.getRandomValues(r);return Array.prototype.map.call(r,function(x){return a[x%a.length]}).join("")}
 async function load(){
   try{var s=await getDocs(query(collection(db,COLL),orderBy("inicio")));ALL=s.docs.map(function(d){var x=d.data();x.inicio=x.inicio.toMillis();return x});
     $("up").textContent="Actualizado "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});drawAll()}
@@ -83,23 +108,35 @@ function view(){
 function drawAll(){
   chips($("cp"),[["","Todas"],["Nahiara","Nahiara"],["Celeste","Celeste"]],FP,function(v){FP=v});
   chips($("cv"),[["prox","Próximos"],["pas","Pasados"],["can","Cancelados"],["todos","Todos"]],FV,function(v){FV=v});
-  var h=new Date();h.setHours(0,0,0,0);var act=byPro().filter(function(t){return t.estado==="activo"&&t.inicio>=h.getTime()});
-  $("s1").textContent=act.length;$("s2").textContent=money(act.reduce(function(a,t){return a+t.sena},0));$("s3").textContent=money(act.reduce(function(a,t){return a+t.resto},0));
-  var v=view(),L=$("list");$("cnt").textContent=v.length+(v.length===1?" turno":" turnos");L.innerHTML="";if(!v.length){L.appendChild(el("div","empty","No hay turnos para mostrar acá."));return}
+  var h=new Date();h.setHours(0,0,0,0);var now=Date.now();
+  var live=byPro().filter(function(t){return t.estado==="activo"&&t.origen!=="bloqueo"});
+  var sum=function(a,f){return a.reduce(function(x,t){return x+f(t)},0)};
+  $("s1").textContent=live.filter(function(t){return t.inicio>=h.getTime()}).length;
+  $("s2").textContent=live.filter(function(t){return t.inicio<now}).length;
+  $("s3").textContent=money(sum(live,function(t){return t.sena||0}));
+  $("s4").textContent=money(sum(live,recibido));
+  $("s5").textContent=money(sum(live,function(t){return t.cobrado?0:(t.resto||0)}));
+  var v=view(),L=$("list");$("cnt").textContent=v.length+(v.length===1?" turno":" turnos");L.innerHTML="";
+  if(!v.length){L.appendChild(el("div","empty","No hay turnos para mostrar acá."));return}
   var last="";v.forEach(function(t){
     if(t.date!==last){last=t.date;L.appendChild(el("h2","day",label(t.date)))}
+    var blk=t.origen==="bloqueo",man=t.origen==="manual";
     var c=el("div","card"),hr=el("div","hr");hr.appendChild(el("b","",t.time+" hs"));hr.appendChild(el("span","pro",t.pro));c.appendChild(hr);
-    var r=el("div");r.appendChild(el("span","badge"+(t.estado==="activo"?"":" x"),ST[t.estado]||t.estado));
-    r.appendChild(el("div","cn",t.cliente));r.appendChild(el("div","sv",t.servicios));
-    var m=el("div","money");[["Total",t.total],["Seña",t.sena],["Resto",t.resto]].forEach(function(x){var sp=el("span","",x[0]+" ");sp.appendChild(el("b","",money(x[1])));m.appendChild(sp)});r.appendChild(m);
+    var r=el("div"),bd=el("span","badge"+(t.estado==="activo"&&!blk?"":" x"),blk&&t.estado==="activo"?"Horario bloqueado":(ST[t.estado]||t.estado));r.appendChild(bd);
+    if(man)bd.appendChild(el("span","tag","anotado por mí"));
+    r.appendChild(el("div","cn",t.cliente));if(!blk)r.appendChild(el("div","sv",t.servicios));
+    if(!blk){var m=el("div","money");[["Total",t.total],["Seña",t.sena],["Resto",t.resto]].forEach(function(x){var sp=el("span","",x[0]+" ");sp.appendChild(el("b","",money(x[1])));m.appendChild(sp)});r.appendChild(m);
+      if(t.formaPago)r.appendChild(el("div","note","Abonó: "+t.formaPago));
+      if(t.cobrado&&t.estado==="activo")r.appendChild(el("div","note","✓ Todo cobrado"));}
     if(t.aclaraciones)r.appendChild(el("div","note","“"+t.aclaraciones+"”"));
     if(t.devuelta)r.appendChild(el("div","note","✓ Seña devuelta"));
-    r.appendChild(el("div","note","Código: "+t.codigo));
     var a=el("div","act");
     if(t.comprobante){var im=el("img","th");im.src=t.comprobante;im.alt="Comprobante";im.onclick=function(){$("oi").src=t.comprobante;$("ov").style.display="flex"};a.appendChild(im)}
-    var w=el("a","btn g","WhatsApp "+t.telefono);w.href=wa(t);w.target="_blank";w.rel="noopener";a.appendChild(w);
+    if(t.telefono){var w=el("a","btn g","WhatsApp "+t.telefono);w.href=wa(t);w.target="_blank";w.rel="noopener";a.appendChild(w)}
+    var upd=function(btn,data){btn.onclick=async function(){var b=writeBatch(db);b.update(doc(db,COLL,t.codigo),data);try{await b.commit();load()}catch(e){}}};
     if(t.estado==="activo"){
-      var x=el("button","btn r","Cancelar y devolver seña"),ar=false;
+      if(!blk&&(t.resto>0||t.cobrado)){var cb=el("button","btn",t.cobrado?"Resto cobrado ✓ (deshacer)":"Marcar resto cobrado");upd(cb,{cobrado:!t.cobrado});a.appendChild(cb)}
+      var x=el("button","btn r",blk?"Liberar horario":(t.sena>0&&!man?"Cancelar y devolver seña":"Cancelar turno")),ar=false;
       x.onclick=async function(){
         if(!ar){ar=true;x.textContent="Tocá de nuevo para confirmar";return}
         x.disabled=true;var b=writeBatch(db);
@@ -108,12 +145,45 @@ function drawAll(){
         try{await b.commit();load()}catch(e){x.textContent="No se pudo. Reintentar";x.disabled=false;ar=false}
       };a.appendChild(x);
     }else{
-      var d=el("button","btn g",t.devuelta?"Seña devuelta ✓ (deshacer)":"Marcar seña devuelta");
-      d.onclick=async function(){var b=writeBatch(db);b.update(doc(db,COLL,t.codigo),{devuelta:!t.devuelta});try{await b.commit();load()}catch(e){}};a.appendChild(d);
+      if(t.sena>0){var d=el("button","btn g",t.devuelta?"Seña devuelta ✓ (deshacer)":"Marcar seña devuelta");upd(d,{devuelta:!t.devuelta});a.appendChild(d)}
+      var q=el("button","btn r","Quitar del panel"),qa=false;
+      q.onclick=async function(){
+        if(!qa){qa=true;q.textContent=(t.devuelta||!(t.sena>0))?"Tocá de nuevo para borrar":"Seña sin devolver. Tocá de nuevo para borrar igual";return}
+        q.disabled=true;
+        try{await deleteDoc(doc(db,COLL,t.codigo));load()}catch(e){q.textContent="No se pudo. Reintentar";q.disabled=false;qa=false}
+      };a.appendChild(q);
     }
     r.appendChild(a);c.appendChild(r);L.appendChild(c);
   });
 }
+// ---- agregar turno manual / bloquear horario
+function fillTimes(){
+  var p=$("fd").value.split("-"),dow=p.length===3?new Date(+p[0],+p[1]-1,+p[2]).getDay():1,hs=HOURS[dow]||[],sel=$("ft");sel.innerHTML="";
+  hs.forEach(function(h){var t=String(h).padStart(2,"0")+":00",o=el("option","",t+" hs");o.value=t;sel.appendChild(o)});
+  var o2=el("option","","Otro horario…");o2.value="otro";sel.appendChild(o2);
+  if(!hs.length)sel.value="otro";$("fo").hidden=sel.value!=="otro";
+}
+$("add").onclick=function(){$("fd").value=iso(new Date());$("fb").checked=false;$("fx").hidden=false;["fs","fn","fw","fto","fr","fa"].forEach(function(i){$(i).value=""});$("ferr").textContent="";fillTimes();$("fsv").disabled=false;$("fsv").textContent="Guardar";$("mo").classList.add("on")};
+$("fd").onchange=fillTimes;$("ft").onchange=function(){$("fo").hidden=this.value!=="otro"};
+$("fb").onchange=function(){$("fx").hidden=this.checked};
+$("fcx").onclick=function(){$("mo").classList.remove("on")};
+$("fsv").onclick=async function(){
+  var blk=$("fb").checked,pro=$("fpr").value,date=$("fd").value,time=$("ft").value==="otro"?$("fo").value:$("ft").value,err=$("ferr");
+  var name=$("fn").value.trim(),srv=$("fs").value.trim(),tot=+$("fto").value||0,rec=+$("fr").value||0;
+  if(!date||!time)return err.textContent="Elegí la fecha y el horario.";
+  if(!blk&&name.length<2)return err.textContent="Escribí el nombre.";
+  if(!blk&&!srv)return err.textContent="Escribí el servicio.";
+  var code=makeCode(),p=date.split("-"),tm=time.split(":"),id=date+"_"+pro+"_"+time;
+  var d={codigo:code,date:date,time:time,pro:pro,inicio:Timestamp.fromDate(new Date(+p[0],+p[1]-1,+p[2],+tm[0],+tm[1])),
+    servicios:blk?"Horario bloqueado":srv,total:blk?0:tot,sena:blk?0:rec,resto:blk?0:Math.max(0,tot-rec),cliente:blk?"(Horario bloqueado)":name,
+    telefono:blk?"":$("fw").value.trim(),aclaraciones:$("fa").value.trim(),comprobante:"",estado:"activo",creado:serverTimestamp(),
+    origen:blk?"bloqueo":"manual",formaPago:blk?"":$("fp2").value,cobrado:!blk&&tot>0&&rec>=tot};
+  this.disabled=true;this.textContent="Guardando…";err.textContent="";
+  var b=writeBatch(db);
+  b.set(doc(db,"ocupados",id),{date:date,pro:pro,time:time});b.set(doc(db,"punteros",id),{code:code});b.set(doc(db,COLL,code),d);
+  try{await b.commit();$("mo").classList.remove("on");FP="";FV="prox";load()}
+  catch(e){this.disabled=false;this.textContent="Guardar";err.textContent="No se pudo guardar. Puede que ese horario ya esté ocupado."}
+};
 $("ov").onclick=function(){$("ov").style.display="none"};
 $("rf").onclick=load;
 load();setInterval(load,30000);
