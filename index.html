@@ -128,7 +128,8 @@ var IMGS = ["data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHCAkIBgoJ
 var DEP = {t:"Depilación con cera descartable", multi:true, o:[
  {l:"Pierna completa",p:15000,m:45,x:"pierna"},{l:"Media pierna",p:10000,m:30,x:"pierna"},{l:"Brazos",p:10000,m:30},
  {l:"Axilas",p:8000,m:15},{l:"Pecho",p:8000,m:20},{l:"Abdomen",p:8000,m:20},{l:"Espalda",p:15000,m:30},
- {l:"Bozo",p:4000,m:10},{l:"Cejas",p:6000,m:15}]};
+ {l:"Bozo",p:4000,m:10},{l:"Cejas",p:6000,m:15},
+ {l:"Cavado bikini",p:8000,m:20,x:"cavado"},{l:"Cavado completo",p:10000,m:30,x:"cavado"},{l:"Tiro de cola",p:6000,m:15}]};
 var TREE = {t:"¿Qué servicio querés?", o:[
  {l:"Uñas", n:{t:"Uñas", o:[
    {l:"Esmaltado semipermanente",p:18000,m:60},{l:"Capping",p:23000,m:90},{l:"Esculpidas en soft gel",p:26000,m:120},
@@ -222,7 +223,7 @@ function render(){
     drawDays();drawSlots();
     $("nx").onclick=function(){if(!S.date||!S.time)return $("err").textContent="Elegí un día y un horario.";go("final")};
   }else if(S.step==="final"){
-    $app.appendChild(el(backBtn()+'<h1>Confirmá tu turno</h1><div class="sum">'+S.sel.map(function(o){return '<p>'+o.l+' <span style="float:right;color:var(--gold)">'+priceTxt(o)+'</span></p>'}).join("")+'<p class="hint">'+S.pro.n+' · '+pretty(S.date)+' · '+S.time+' hs · ~'+minutes()+' min</p><div class="tot"><span>Total</span><span>'+money(total())+'</span></div></div>'+
+    $app.appendChild(el(backBtn()+'<h1>Confirmá tu turno</h1><div class="sum">'+S.sel.map(function(o){return '<p>'+o.l+' <span style="float:right;color:var(--gold)">'+priceTxt(o)+'</span></p>'}).join("")+'<p class="hint">'+S.pro.n+' · '+pretty(S.date)+' · '+S.time+' hs</p><div class="tot"><span>Total</span><span>'+money(total())+'</span></div></div>'+
     '<h2>Tus datos</h2><input id="name" placeholder="Nombre y apellido" autocomplete="name"><input id="tel" placeholder="Teléfono / WhatsApp" type="tel" autocomplete="tel"><textarea id="note" placeholder="¿Querés aclarar algo del turno? (opcional)"></textarea>'+
     '<h2>Forma de pago</h2><div class="pay"><button class="opt" id="p1">Transferencia</button><button class="opt" id="p2">Efectivo</button></div><div id="payBox"></div><p class="err" id="err" role="alert"></p><button class="cta" id="go">Reservar turno</button>'));
     $("p1").onclick=function(){S.pay="Transferencia";drawPay()};$("p2").onclick=function(){S.pay="Efectivo";drawPay()};
@@ -289,7 +290,7 @@ function confirmar(){
   if(!S.pay)return err.textContent="Elegí transferencia o efectivo.";
   if(S.pay==="Transferencia"&&!S.file)return err.textContent="Subí el comprobante de la transferencia.";
   
-  S.msg="*NUEVO TURNO · NAHAL*\n\n*Servicio:* "+names()+"\n*Profesional:* "+S.pro.n+"\n*Fecha:* "+pretty(S.date)+"\n*Horario:* "+S.time+" hs\n*Duración estimada:* "+minutes()+" min\n*Total:* "+money(total())+(S.sel.some(function(o){return o.p==null})?" (+ servicio a consultar)":"")+"\n*Pago:* "+S.pay+(S.pay==="Transferencia"?" (alias "+ALIAS+", comprobante adjunto)":"")+"\n\n*Cliente:* "+name+"\n*Teléfono:* "+tel+(note?"\n*Aclaraciones:* "+note:"");
+  S.msg="*NUEVO TURNO · NAHAL*\n\n*Servicio:* "+names()+"\n*Profesional:* "+S.pro.n+"\n*Fecha:* "+pretty(S.date)+"\n*Horario:* "+S.time+" hs\n*Total:* "+money(total())+(S.sel.some(function(o){return o.p==null})?" (+ servicio a consultar)":"")+"\n*Pago:* "+S.pay+(S.pay==="Transferencia"?" (alias "+ALIAS+", comprobante adjunto)":"")+"\n\n*Cliente:* "+name+"\n*Teléfono:* "+tel+(note?"\n*Aclaraciones:* "+note:"");
   var btn=$("go");btn.disabled=true;btn.textContent="Reservando…";err.textContent="";
   window.DB.book({date:S.date,time:S.time,pro:S.pro.n,svc:names(),total:total(),min:minutes(),name:name,tel:tel,note:note,pay:S.pay})
    .then(function(){go("done")})
