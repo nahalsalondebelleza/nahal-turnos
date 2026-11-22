@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#4a3026">
+<title>NAHAL · Panel de turnos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#4a3026;--deep:#2b2421;--card:#5a3b2f;--card2:#66443a;--cream:#f4f0e8;--gold:#b99a6b;--mute:#c9bba8;--line:rgba(185,154,107,.35);--red:#a64545;color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font:17px/1.5 'DM Sans',system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}header svg{width:52px;height:52px;flex:none}
+.brand{font-family:'DM Serif Display',Georgia,serif;font-size:1.5rem;letter-spacing:.26em;line-height:1}
+header small{display:block;color:var(--gold);letter-spacing:.2em;font-size:.78rem;margin-top:5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 18px}
+.stat{background:var(--deep);border:1px solid var(--line);border-radius:18px;padding:14px 10px;text-align:center}
+.stat b{display:block;font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.5rem;color:var(--gold);line-height:1.2}
+.stat span{font-size:.9rem;color:var(--mute)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
+.chip{flex:0 0 auto;padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--cream);font:600 1rem 'DM Sans',sans-serif;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--gold);color:var(--deep);border-color:var(--gold)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 4px}
+.btn{font:600 1rem 'DM Sans',sans-serif;border:0;border-radius:999px;padding:12px 18px;background:var(--gold);color:var(--deep);cursor:pointer;text-decoration:none;display:inline-block}
+.btn.g{background:none;border:1px solid var(--gold);color:var(--gold)}.btn.r{background:var(--red);color:var(--cream)}
+.upd{color:var(--mute);font-size:.9rem}
+h2.day{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.3rem;margin:26px 0 10px;text-transform:capitalize}
+.card{display:grid;grid-template-columns:76px 1fr;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px}
+.hr{text-align:center;border-right:1px solid var(--line);padding-right:12px}
+.hr b{display:block;font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.5rem;line-height:1.1}
+.pro{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--deep);color:var(--gold);font-size:.85rem;font-weight:600}
+.cn{font-weight:600;font-size:1.15rem}.sv{margin:2px 0 8px}
+.money{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.money span{background:var(--deep);border-radius:10px;padding:4px 10px;font-size:.95rem}.money b{color:var(--gold)}
+.note{color:var(--mute);font-size:.95rem;margin:4px 0}
+.badge{display:inline-block;padding:2px 12px;border-radius:999px;font-weight:600;font-size:.9rem;background:var(--gold);color:var(--deep);margin-bottom:6px}.badge.x{background:var(--red);color:var(--cream)}
+.act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.th{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--gold);cursor:zoom-in}
+.big{background:var(--deep);border:1px solid var(--gold);border-radius:28px;padding:22px 18px 24px;min-height:62vh;margin-top:14px}
+.bh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.bh h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:2rem;margin:0}.cnt{color:var(--gold);font-weight:600;font-size:1.1rem}
+#list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:14px;align-items:start}
+#list h2.day,#list .empty{grid-column:1/-1}#list .card{margin:0}
+.stat b{font-size:1.9rem!important}.cn{font-size:1.3rem}.hr b{font-size:1.8rem}
+.empty{text-align:center;color:var(--mute);padding:40px 10px;border:1px dashed var(--line);border-radius:20px}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:9;padding:10px}#ov img{max-width:100%;max-height:100%}
+@media(max-width:420px){.card{grid-template-columns:1fr}.hr{border-right:0;border-bottom:1px solid var(--line);padding:0 0 10px;text-align:left;display:flex;align-items:center;gap:12px}.hr b{display:inline}.pro{margin-top:0}}
+</style></head><body><main>
+<header><svg viewBox="0 0 64 64" fill="none" stroke="#b99a6b" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M13 42A22 22 0 1 1 52 38"/><path d="M8 45Q20 38 30 45T52 44"/><path d="M50 44q3-9 11-9 0 8-11 9z"/><text x="32" y="39" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-size="26" fill="#ebe2d3" stroke="none">N</text></svg>
+<div><div class="brand">NAHAL</div><small>PANEL DE TURNOS</small></div></header>
+<div class="stats"><div class="stat"><b id="s1">0</b><span>turnos próximos</span></div><div class="stat"><b id="s2">$0</b><span>señas cobradas</span></div><div class="stat"><b id="s3">$0</b><span>a cobrar en el local</span></div></div>
+<div class="chips" id="cp"></div><div class="chips" id="cv"></div>
+<div class="tools"><button class="btn g" id="rf">Actualizar</button><span class="upd" id="up"></span></div>
+<section class="big"><div class="bh"><h1>Agenda de turnos</h1><span class="cnt" id="cnt"></span></div><div id="list"></div></section></main><div id="ov"><img id="oi" alt="Comprobante"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,collection,query,orderBy,getDocs,writeBatch,doc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+var COLL="reservas_x7k2q9";
+var db=getFirestore(initializeApp({apiKey:"AIzaSyC6HKY_lp8JgjJ_X56P6BH2c5qD7yscgg8",authDomain:"nahal-turnos.firebaseapp.com",projectId:"nahal-turnos",appId:"1:884410449752:web:d1aea0946a6b86cb0b2f2d"}));
+var $=function(i){return document.getElementById(i)},ALL=[],FP="",FV="prox";
+var DAYN=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"],MON=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+var ST={activo:"Reservado",cancelado:"Cancelado por la clienta",cancelado_salon:"Cancelado por el salón"};
+function money(n){return "$"+(n||0).toLocaleString("es-AR")}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function label(s){var t=new Date(),m=new Date();m.setDate(m.getDate()+1);if(s===iso(t))return "Hoy";if(s===iso(m))return "Mañana";var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return DAYN[d.getDay()]+" "+d.getDate()+" de "+MON[d.getMonth()]}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function chips(box,items,cur,fn){box.innerHTML="";items.forEach(function(x){var b=el("button","chip",x[1]);b.setAttribute("aria-pressed",cur===x[0]);b.onclick=function(){fn(x[0]);drawAll()};box.appendChild(b)})}
+function wa(t){var d=(t.telefono||"").replace(/\D/g,"");if(d.indexOf("54")!==0)d="54"+d.replace(/^0/,"");return "https://wa.me/"+d}
+async function load(){
+  try{var s=await getDocs(query(collection(db,COLL),orderBy("inicio")));ALL=s.docs.map(function(d){var x=d.data();x.inicio=x.inicio.toMillis();return x});
+    $("up").textContent="Actualizado "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});drawAll()}
+  catch(e){$("list").innerHTML="";$("list").appendChild(el("div","empty","No se pudieron cargar los turnos. Revisá tu conexión o que las reglas de Firebase estén publicadas."))}
+}
+function byPro(){return ALL.filter(function(t){return !FP||t.pro===FP})}
+function view(){
+  var h=new Date();h.setHours(0,0,0,0);var s=h.getTime(),L=byPro();
+  if(FV==="prox")return L.filter(function(t){return t.estado==="activo"&&t.inicio>=s});
+  if(FV==="pas")return L.filter(function(t){return t.estado==="activo"&&t.inicio<s}).reverse();
+  if(FV==="can")return L.filter(function(t){return t.estado!=="activo"});
+  return L;
+}
+function drawAll(){
+  chips($("cp"),[["","Todas"],["Nahiara","Nahiara"],["Celeste","Celeste"]],FP,function(v){FP=v});
+  chips($("cv"),[["prox","Próximos"],["pas","Pasados"],["can","Cancelados"],["todos","Todos"]],FV,function(v){FV=v});
+  var h=new Date();h.setHours(0,0,0,0);var act=byPro().filter(function(t){return t.estado==="activo"&&t.inicio>=h.getTime()});
+  $("s1").textContent=act.length;$("s2").textContent=money(act.reduce(function(a,t){return a+t.sena},0));$("s3").textContent=money(act.reduce(function(a,t){return a+t.resto},0));
+  var v=view(),L=$("list");$("cnt").textContent=v.length+(v.length===1?" turno":" turnos");L.innerHTML="";if(!v.length){L.appendChild(el("div","empty","No hay turnos para mostrar acá."));return}
+  var last="";v.forEach(function(t){
+    if(t.date!==last){last=t.date;L.appendChild(el("h2","day",label(t.date)))}
+    var c=el("div","card"),hr=el("div","hr");hr.appendChild(el("b","",t.time+" hs"));hr.appendChild(el("span","pro",t.pro));c.appendChild(hr);
+    var r=el("div");r.appendChild(el("span","badge"+(t.estado==="activo"?"":" x"),ST[t.estado]||t.estado));
+    r.appendChild(el("div","cn",t.cliente));r.appendChild(el("div","sv",t.servicios));
+    var m=el("div","money");[["Total",t.total],["Seña",t.sena],["Resto",t.resto]].forEach(function(x){var sp=el("span","",x[0]+" ");sp.appendChild(el("b","",money(x[1])));m.appendChild(sp)});r.appendChild(m);
+    if(t.aclaraciones)r.appendChild(el("div","note","“"+t.aclaraciones+"”"));
+    if(t.devuelta)r.appendChild(el("div","note","✓ Seña devuelta"));
+    r.appendChild(el("div","note","Código: "+t.codigo));
+    var a=el("div","act");
+    if(t.comprobante){var im=el("img","th");im.src=t.comprobante;im.alt="Comprobante";im.onclick=function(){$("oi").src=t.comprobante;$("ov").style.display="flex"};a.appendChild(im)}
+    var w=el("a","btn g","WhatsApp "+t.telefono);w.href=wa(t);w.target="_blank";w.rel="noopener";a.appendChild(w);
+    if(t.estado==="activo"){
+      var x=el("button","btn r","Cancelar y devolver seña"),ar=false;
+      x.onclick=async function(){
+        if(!ar){ar=true;x.textContent="Tocá de nuevo para confirmar";return}
+        x.disabled=true;var b=writeBatch(db);
+        b.update(doc(db,COLL,t.codigo),{estado:"cancelado_salon"});
+        b.delete(doc(db,"ocupados",t.date+"_"+t.pro+"_"+t.time));
+        try{await b.commit();load()}catch(e){x.textContent="No se pudo. Reintentar";x.disabled=false;ar=false}
+      };a.appendChild(x);
+    }else{
+      var d=el("button","btn g",t.devuelta?"Seña devuelta ✓ (deshacer)":"Marcar seña devuelta");
+      d.onclick=async function(){var b=writeBatch(db);b.update(doc(db,COLL,t.codigo),{devuelta:!t.devuelta});try{await b.commit();load()}catch(e){}};a.appendChild(d);
+    }
+    r.appendChild(a);c.appendChild(r);L.appendChild(c);
+  });
+}
+$("ov").onclick=function(){$("ov").style.display="none"};
+$("rf").onclick=load;
+load();setInterval(load,30000);
+</script></body></html>
